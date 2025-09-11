@@ -23,9 +23,9 @@ const FlightsList: React.FC = () => {
   const [filteredFlights, setFilteredFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [originFilter, setOriginFilter] = useState('');
-  const [destinationFilter, setDestinationFilter] = useState('');
-  const [aircraftFilter, setAircraftFilter] = useState('');
+  const [originFilter, setOriginFilter] = useState('all');
+  const [destinationFilter, setDestinationFilter] = useState('all');
+  const [aircraftFilter, setAircraftFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalFlights, setTotalFlights] = useState(0);
@@ -51,9 +51,9 @@ const FlightsList: React.FC = () => {
         offset: ((currentPage - 1) * flightsPerPage).toString(),
       });
 
-      if (originFilter) params.append('origin', originFilter);
-      if (destinationFilter) params.append('destination', destinationFilter);
-      if (aircraftFilter) params.append('aircraft_type', aircraftFilter);
+      if (originFilter && originFilter !== 'all') params.append('origin', originFilter);
+      if (destinationFilter && destinationFilter !== 'all') params.append('destination', destinationFilter);
+      if (aircraftFilter && aircraftFilter !== 'all') params.append('aircraft_type', aircraftFilter);
       if (dateFilter) params.append('date', dateFilter);
 
       const response = await fetch(`http://127.0.0.1:8000/api/v1/flights?${params}`);
@@ -133,7 +133,7 @@ const FlightsList: React.FC = () => {
                 <SelectValue placeholder="Origin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Origins</SelectItem>
+                <SelectItem value="all">All Origins</SelectItem>
                 {originOptions.map(origin => (
                   <SelectItem key={origin} value={origin}>{origin}</SelectItem>
                 ))}
@@ -144,7 +144,7 @@ const FlightsList: React.FC = () => {
                 <SelectValue placeholder="Destination" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Destinations</SelectItem>
+                <SelectItem value="all">All Destinations</SelectItem>
                 {destinationOptions.map(dest => (
                   <SelectItem key={dest} value={dest}>{dest}</SelectItem>
                 ))}
@@ -155,7 +155,7 @@ const FlightsList: React.FC = () => {
                 <SelectValue placeholder="Aircraft" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Aircraft</SelectItem>
+                <SelectItem value="all">All Aircraft</SelectItem>
                 {aircraftOptions.map(aircraft => (
                   <SelectItem key={aircraft} value={aircraft}>{aircraft}</SelectItem>
                 ))}
@@ -165,9 +165,9 @@ const FlightsList: React.FC = () => {
               variant="outline" 
               onClick={() => {
                 setSearchTerm('');
-                setOriginFilter('');
-                setDestinationFilter('');
-                setAircraftFilter('');
+                setOriginFilter('all');
+                setDestinationFilter('all');
+                setAircraftFilter('all');
                 setDateFilter('');
                 setCurrentPage(1);
               }}

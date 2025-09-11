@@ -41,9 +41,9 @@ const CrewList: React.FC = () => {
   const [crewPreferences, setCrewPreferences] = useState<CrewPreference[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [baseFilter, setBaseFilter] = useState('');
-  const [rankFilter, setRankFilter] = useState('');
-  const [aircraftFilter, setAircraftFilter] = useState('');
+  const [baseFilter, setBaseFilter] = useState('all');
+  const [rankFilter, setRankFilter] = useState('all');
+  const [aircraftFilter, setAircraftFilter] = useState('all');
 
   const baseOptions = ['DEL', 'BOM', 'BLR', 'MAA', 'CCU', 'HYD'];
   const rankOptions = ['Captain', 'First Officer', 'Purser', 'FA'];
@@ -102,15 +102,15 @@ const CrewList: React.FC = () => {
       );
     }
 
-    if (baseFilter) {
+    if (baseFilter && baseFilter !== 'all') {
       filtered = filtered.filter(crew => crew.Base === baseFilter);
     }
 
-    if (rankFilter) {
+    if (rankFilter && rankFilter !== 'all') {
       filtered = filtered.filter(crew => crew.Rank === rankFilter);
     }
 
-    if (aircraftFilter) {
+    if (aircraftFilter && aircraftFilter !== 'all') {
       filtered = filtered.filter(crew => 
         crew.Aircraft_Type_License.includes(aircraftFilter)
       );
@@ -186,7 +186,7 @@ const CrewList: React.FC = () => {
                 <SelectValue placeholder="Base" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Bases</SelectItem>
+                <SelectItem value="all">All Bases</SelectItem>
                 {baseOptions.map(base => (
                   <SelectItem key={base} value={base}>{base}</SelectItem>
                 ))}
@@ -197,7 +197,7 @@ const CrewList: React.FC = () => {
                 <SelectValue placeholder="Rank" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Ranks</SelectItem>
+                <SelectItem value="all">All Ranks</SelectItem>
                 {rankOptions.map(rank => (
                   <SelectItem key={rank} value={rank}>{rank}</SelectItem>
                 ))}
@@ -208,7 +208,7 @@ const CrewList: React.FC = () => {
                 <SelectValue placeholder="Aircraft" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Aircraft</SelectItem>
+                <SelectItem value="all">All Aircraft</SelectItem>
                 {aircraftOptions.map(aircraft => (
                   <SelectItem key={aircraft} value={aircraft}>{aircraft}</SelectItem>
                 ))}
@@ -218,9 +218,9 @@ const CrewList: React.FC = () => {
               variant="outline" 
               onClick={() => {
                 setSearchTerm('');
-                setBaseFilter('');
-                setRankFilter('');
-                setAircraftFilter('');
+                setBaseFilter('all');
+                setRankFilter('all');
+                setAircraftFilter('all');
               }}
             >
               Clear Filters
