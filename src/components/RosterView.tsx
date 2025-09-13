@@ -13,6 +13,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
+import CrewDetailsModal from './CrewDetailsModal';
 
 interface CrewMember {
   Crew_ID: string;
@@ -50,6 +51,8 @@ const RosterView = () => {
   const [selectedRoster, setSelectedRoster] = useState<RosterDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchRosterHistory();
@@ -113,6 +116,11 @@ const RosterView = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleCrewClick = (crewId: string) => {
+    setSelectedCrewId(crewId);
+    setIsModalOpen(true);
   };
 
   if (loading) {
@@ -255,12 +263,17 @@ const RosterView = () => {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {flight.Crew_Members.map((crew, crewIndex) => (
-                          <Badge
+                          <button
                             key={crewIndex}
-                            className={getRankColor(crew.Crew_Rank)}
+                            onClick={() => handleCrewClick(crew.Crew_ID)}
+                            className="inline-block"
                           >
-                            {crew.Crew_ID} ({crew.Crew_Rank})
-                          </Badge>
+                            <Badge
+                              className={`${getRankColor(crew.Crew_Rank)} hover:opacity-80 cursor-pointer transition-opacity`}
+                            >
+                              {crew.Crew_ID} ({crew.Crew_Rank})
+                            </Badge>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -281,6 +294,12 @@ const RosterView = () => {
           )}
         </div>
       </div>
+
+      <CrewDetailsModal 
+        crewId={selectedCrewId}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };

@@ -98,6 +98,7 @@ interface RosterHistoryItem {
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("roster");
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [rosterData, setRosterData] = useState<RosterResponse | null>(null);
   const [rosterHistory, setRosterHistory] = useState<RosterHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -253,6 +254,13 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsChatbotOpen(true)}
+              className="gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Disruption Assistant
+            </Button>
             <Badge variant="secondary" className="bg-success-light text-success-foreground">
               <Zap className="h-3 w-3 mr-1" />
               Optimized
@@ -673,6 +681,11 @@ const Index = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <DisruptionChatbot 
+          isOpen={isChatbotOpen}
+          onClose={() => setIsChatbotOpen(false)}
+        />
       </div>
     </div>
   );
