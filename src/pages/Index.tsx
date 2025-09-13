@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import CrewList from "@/components/CrewList";
 import FlightsList from "@/components/FlightsList";
 import SystemStatus from "@/components/SystemStatus";
+import RosterView from "@/components/RosterView";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const locales = {
@@ -265,6 +266,10 @@ const Index = () => {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-6 bg-card shadow-elegant">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="roster" className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
               Roster
@@ -291,7 +296,7 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="roster" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             {/* Roster Generation */}
             <Card className="shadow-elegant">
               <CardHeader>
@@ -464,6 +469,10 @@ const Index = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="roster" className="space-y-6">
+            <RosterView />
           </TabsContent>
 
           <TabsContent value="crew" className="space-y-6">
