@@ -40,13 +40,18 @@ interface CrewPreference {
 }
 
 interface FlightAssignment {
-  flight_number: string;
-  departure_time: string;
-  arrival_time: string;
-  departure_airport: string;
-  arrival_airport: string;
-  aircraft_type: string;
-  date: string;
+  Date: string;
+  Flight_Number: string;
+  Duty_Start: string;
+  Duty_End: string;
+  Aircraft_Type: string;
+  Origin: string;
+  Destination: string;
+  Duration: string;
+  Crew_Members: {
+    Crew_ID: string;
+    Crew_Rank: string;
+  }[];
 }
 
 interface CrewDetailsModalProps {
@@ -60,6 +65,7 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
   const [schedule, setSchedule] = useState<CrewSchedule[]>([]);
   const [preferences, setPreferences] = useState<CrewPreference[]>([]);
   const [flightAssignments, setFlightAssignments] = useState<FlightAssignment[]>([]);
+  const [latestRoster, setLatestRoster] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -103,11 +109,20 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
         setPreferences([]);
       }
 
-      // Fetch flight assignments
+      // Fetch latest roster and flight assignments
       try {
-        const flightsResponse = await fetch(`http://127.0.0.1:8000/api/v1/crew/${crewId}/flights`);
-        const flightsData = await flightsResponse.json();
-        setFlightAssignments(flightsData.flights || []);
+        const rostersResponse = await fetch(`http://127.0.0.1:8000/api/v1/rosters/history?limit=1&offset=0`);
+        const rostersData = await rostersResponse.json();
+        
+        if (rostersData.rosters && rostersData.rosters.length > 0) {
+          const latestRosterId = rostersData.rosters[0].id;
+          
+          const rosterResponse = await fetch(`http://127.0.0.1:8000/api/v1/rosters/${latestRosterId}`);
+          const rosterData = await rosterResponse.json();
+          
+          setLatestRoster(rosterData);
+          setFlightAssignments(rosterData.roster_data || []);
+        }
       } catch (error) {
         console.log('Flight assignments not available for this crew member');
         setFlightAssignments([]);
@@ -122,11 +137,12 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
 
   const getRankColor = (rank: string) => {
     switch (rank?.toLowerCase()) {
-      case 'captain': return 'bg-primary text-primary-foreground';
+      case 'captain': return 'bg-red-600 text-white';
       case 'first officer': return 'bg-emerald-500 text-white';
       case 'senior first officer': return 'bg-emerald-600 text-white';
       case 'instructor/check pilot': return 'bg-purple-600 text-white';
-      case 'purser': return 'bg-amber-500 text-white';
+      case 'trainee first officer': return 'bg-emerald-400 text-white';
+      case 'purser': return 'bg-amber-600 text-white';
       case 'senior cabin crew': return 'bg-blue-500 text-white';
       case 'junior cabin crew': return 'bg-gray-500 text-white';
       case 'sccm (lead cabin crew)': return 'bg-indigo-600 text-white';
@@ -255,79 +271,94 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
                     Flight Assignments
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {flightAssignments.length > 0 ? (
-                    <div className="space-y-4">
-                      {Object.entries(
-                        flightAssignments.reduce((acc, flight) => {
-                          const date = flight.date;
-                          if (!acc[date]) acc[date] = [];
-                          acc[date].push(flight);
-                          return acc;
-                        }, {} as Record<string, FlightAssignment[]>)
-                      )
-                        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                        .map(([date, flights]) => (
-                          <div key={date} className="border rounded-lg p-4">
-                            <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-primary" />
-                              {new Date(date).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
-                              <Badge variant="secondary" className="ml-2">
-                                {flights.length} flight{flights.length > 1 ? 's' : ''}
-                              </Badge>
-                            </h4>
-                            <div className="space-y-3">
-                              {flights.map((flight, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                                  <div className="flex items-center gap-4">
-                                    <div className="p-2 rounded-lg bg-primary/10">
-                                      <Plane className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-lg">{flight.flight_number}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {flight.departure_airport} → {flight.arrival_airport}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Aircraft: {flight.aircraft_type}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Clock className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-sm font-medium">
-                                        {flight.departure_time} - {flight.arrival_time}
-                                      </span>
-                                    </div>
-                                    <Badge variant="outline" className="text-xs">
-                                      Duration: {(() => {
-                                        const dep = new Date(`2000-01-01 ${flight.departure_time}`);
-                                        const arr = new Date(`2000-01-01 ${flight.arrival_time}`);
-                                        const diff = arr.getTime() - dep.getTime();
-                                        const hours = Math.floor(diff / (1000 * 60 * 60));
-                                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                                        return `${hours}h ${minutes}m`;
-                                      })()}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-8">
-                      No flight assignments available
-                    </p>
-                  )}
-                </CardContent>
+                 <CardContent>
+                   {flightAssignments.length > 0 ? (
+                     <div className="space-y-4">
+                       {Object.entries(
+                         flightAssignments.reduce((acc, flight) => {
+                           const date = flight.Date;
+                           if (!acc[date]) acc[date] = [];
+                           acc[date].push(flight);
+                           return acc;
+                         }, {} as Record<string, FlightAssignment[]>)
+                       )
+                         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                         .map(([date, flights]) => (
+                           <div key={date} className="border rounded-lg p-4">
+                             <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                               <Calendar className="h-4 w-4 text-primary" />
+                               {new Date(date).toLocaleDateString('en-US', { 
+                                 weekday: 'long', 
+                                 year: 'numeric', 
+                                 month: 'long', 
+                                 day: 'numeric' 
+                               })}
+                               <Badge variant="secondary" className="ml-2">
+                                 {flights.length} flight{flights.length > 1 ? 's' : ''}
+                               </Badge>
+                             </h4>
+                             <div className="space-y-4">
+                               {flights.map((flight, index) => (
+                                 <div key={index} className="border rounded-lg p-4 bg-muted/20">
+                                   <div className="flex items-center justify-between mb-4">
+                                     <div className="flex items-center gap-4">
+                                       <div className="p-2 rounded-lg bg-primary/10">
+                                         <Plane className="h-4 w-4 text-primary" />
+                                       </div>
+                                       <div>
+                                         <p className="font-medium text-lg">{flight.Flight_Number}</p>
+                                         <p className="text-sm text-muted-foreground">
+                                           {flight.Origin} → {flight.Destination}
+                                         </p>
+                                         <p className="text-sm text-muted-foreground">
+                                           Aircraft: {flight.Aircraft_Type}
+                                         </p>
+                                       </div>
+                                     </div>
+                                     <div className="text-right">
+                                       <div className="flex items-center gap-2 mb-1">
+                                         <Clock className="h-3 w-3 text-muted-foreground" />
+                                         <span className="text-sm font-medium">
+                                           {new Date(flight.Duty_Start).toLocaleTimeString('en-US', { 
+                                             hour: '2-digit', 
+                                             minute: '2-digit' 
+                                           })} - {new Date(flight.Duty_End).toLocaleTimeString('en-US', { 
+                                             hour: '2-digit', 
+                                             minute: '2-digit' 
+                                           })}
+                                         </span>
+                                       </div>
+                                       <Badge variant="outline" className="text-xs">
+                                         Duration: {flight.Duration}
+                                       </Badge>
+                                     </div>
+                                   </div>
+                                   
+                                   <div>
+                                     <h5 className="font-medium mb-2 text-sm">Assigned Crew Members:</h5>
+                                     <div className="flex flex-wrap gap-2">
+                                       {flight.Crew_Members.map((member, memberIndex) => (
+                                         <Badge 
+                                           key={memberIndex} 
+                                           className={`${getRankColor(member.Crew_Rank)} text-xs`}
+                                         >
+                                           {member.Crew_ID} - {member.Crew_Rank}
+                                         </Badge>
+                                       ))}
+                                     </div>
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         ))}
+                     </div>
+                   ) : (
+                     <p className="text-center text-muted-foreground py-8">
+                       No flight assignments available
+                     </p>
+                   )}
+                 </CardContent>
               </Card>
             </TabsContent>
 
