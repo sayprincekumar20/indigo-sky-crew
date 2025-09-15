@@ -128,6 +128,7 @@ const DisruptionChatbot: React.FC<DisruptionChatbotProps> = ({ isOpen, onClose }
 
   const formatBotMessage = (content: string) => {
     // Convert markdown-style formatting to HTML
+    if (!content) return '';
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')

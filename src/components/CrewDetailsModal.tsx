@@ -39,6 +39,16 @@ interface CrewPreference {
   priority: string;
 }
 
+interface FlightAssignment {
+  flight_number: string;
+  departure_time: string;
+  arrival_time: string;
+  departure_airport: string;
+  arrival_airport: string;
+  aircraft_type: string;
+  date: string;
+}
+
 interface CrewDetailsModalProps {
   crewId: string | null;
   isOpen: boolean;
@@ -49,6 +59,7 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
   const [crewDetails, setCrewDetails] = useState<CrewMember | null>(null);
   const [schedule, setSchedule] = useState<CrewSchedule[]>([]);
   const [preferences, setPreferences] = useState<CrewPreference[]>([]);
+  const [flightAssignments, setFlightAssignments] = useState<FlightAssignment[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -90,6 +101,16 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
       } catch (error) {
         console.log('Preferences not available for this crew member');
         setPreferences([]);
+      }
+
+      // Fetch flight assignments
+      try {
+        const flightsResponse = await fetch(`http://127.0.0.1:8000/api/v1/crew/${crewId}/flights`);
+        const flightsData = await flightsResponse.json();
+        setFlightAssignments(flightsData.flights || []);
+      } catch (error) {
+        console.log('Flight assignments not available for this crew member');
+        setFlightAssignments([]);
       }
     } catch (error) {
       console.error('Error fetching crew details:', error);
@@ -153,8 +174,9 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
           </div>
         ) : crewDetails ? (
           <Tabs defaultValue="profile" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="flights">Flight Assignments</TabsTrigger>
               <TabsTrigger value="schedule">Schedule</TabsTrigger>
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
             </TabsList>
@@ -220,6 +242,90 @@ const CrewDetailsModal: React.FC<CrewDetailsModalProps> = ({ crewId, isOpen, onC
                         {crewDetails.Leave_Start} to {crewDetails.Leave_End}
                       </p>
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="flights" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plane className="h-5 w-5" />
+                    Flight Assignments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {flightAssignments.length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(
+                        flightAssignments.reduce((acc, flight) => {
+                          const date = flight.date;
+                          if (!acc[date]) acc[date] = [];
+                          acc[date].push(flight);
+                          return acc;
+                        }, {} as Record<string, FlightAssignment[]>)
+                      )
+                        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                        .map(([date, flights]) => (
+                          <div key={date} className="border rounded-lg p-4">
+                            <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              {new Date(date).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })}
+                              <Badge variant="secondary" className="ml-2">
+                                {flights.length} flight{flights.length > 1 ? 's' : ''}
+                              </Badge>
+                            </h4>
+                            <div className="space-y-3">
+                              {flights.map((flight, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-2 rounded-lg bg-primary/10">
+                                      <Plane className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-lg">{flight.flight_number}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {flight.departure_airport} → {flight.arrival_airport}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        Aircraft: {flight.aircraft_type}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Clock className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-sm font-medium">
+                                        {flight.departure_time} - {flight.arrival_time}
+                                      </span>
+                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      Duration: {(() => {
+                                        const dep = new Date(`2000-01-01 ${flight.departure_time}`);
+                                        const arr = new Date(`2000-01-01 ${flight.arrival_time}`);
+                                        const diff = arr.getTime() - dep.getTime();
+                                        const hours = Math.floor(diff / (1000 * 60 * 60));
+                                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                        return `${hours}h ${minutes}m`;
+                                      })()}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      No flight assignments available
+                    </p>
                   )}
                 </CardContent>
               </Card>

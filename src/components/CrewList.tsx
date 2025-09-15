@@ -222,8 +222,8 @@ const CrewList = () => {
 
       {/* Crew Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCrew.map((crew) => (
-          <Card key={crew.Crew_ID} className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+        {filteredCrew.map((crew, index) => (
+          <Card key={`${crew.Crew_ID}-${index}`} className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
