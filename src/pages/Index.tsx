@@ -18,6 +18,7 @@ import {
   Clock, 
   TrendingUp,
   MapPin,
+  MessageSquare,
   User,
   Zap,
   BarChart3,
@@ -31,6 +32,7 @@ import CrewList from "@/components/CrewList";
 import FlightsList from "@/components/FlightsList";
 import SystemStatus from "@/components/SystemStatus";
 import RosterView from "@/components/RosterView";
+import DisruptionChatbot from "@/components/DisruptionChatbot";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const locales = {
